@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>สถิติรายจังหวัดของไทย 77 จังหวัด</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#f4f6fa;--card:#fff;--ink:#1d2433;--mut:#667085;--line:#e3e7ef;--pri:#1f5eff;--pri2:#e8efff;--ok:#12805c;--err:#c0392b;--warn:#b7791f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans Thai',system-ui,sans-serif;font-size:15px;line-height:1.55}
+header{background:linear-gradient(120deg,#102a6b,#1f5eff);color:#fff;padding:22px 20px}
+header h1{margin:0;font-size:24px}header p{margin:4px 0 0;opacity:.85;font-size:14px}
+main{max-width:1280px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sp{flex:1}
+h2{font-size:17px;margin:0 0 10px}
+h3{font-size:15px;margin:12px 0 6px}
+button,select,input{font-family:inherit;font-size:14px}
+button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer}
+button:hover{background:#f1f4fa}
+button.pri{background:var(--pri);border-color:var(--pri);color:#fff;font-weight:500}
+button.pri:hover{background:#174ed6}
+button:disabled{opacity:.45;cursor:not-allowed}
+select,input[type=text],input[type=number]{border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:#fff;max-width:100%}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 12px;cursor:pointer;user-select:none;font-size:13.5px}
+.chip.on{background:var(--pri2);border-color:var(--pri);color:#0d3fd0;font-weight:500}
+.chip.dim{opacity:.45}
+.chip .x{color:var(--mut);font-weight:700;margin-left:2px}
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.tab{padding:9px 18px;border-radius:10px 10px 0 0;border:1px solid var(--line);background:#e9edf5;cursor:pointer;font-weight:500}
+.tab.on{background:var(--card);border-bottom-color:var(--card);color:var(--pri)}
+.stat{font-size:12.5px;padding:3px 9px;border-radius:6px;background:#f1f4fa;color:var(--mut)}
+.stat.ok{background:#e4f6ef;color:var(--ok)}.stat.err{background:#fdecea;color:var(--err)}.stat.load{background:#fff6e0;color:var(--warn)}
+.tw{overflow:auto;max-height:70vh;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;text-align:right}
+th{position:sticky;top:0;background:#f1f4fa;cursor:pointer;z-index:1}
+th:first-child,td:first-child,th.l,td.l{text-align:left}
+tr:hover td{background:#fafcff}
+small.rk{color:var(--mut);font-size:11.5px}
+td.neg{color:var(--err)}td.pos{color:var(--ok)}
+.cap{font-size:13.5px;color:var(--mut);background:#f8fafc;border-left:3px solid var(--pri);padding:8px 12px;margin:10px 0;border-radius:0 8px 8px 0}
+.msg{font-size:13.5px;color:var(--warn);margin:6px 0}
+.ac{position:relative;flex:1;min-width:260px}
+.ac input{width:100%}
+#sugg{position:absolute;left:0;right:0;top:100%;background:#fff;border:1px solid var(--line);border-radius:8px;margin-top:3px;max-height:260px;overflow:auto;z-index:20;box-shadow:0 8px 24px #0002}
+#sugg div{padding:7px 12px;cursor:pointer;display:flex;justify-content:space-between}
+#sugg div.hi,#sugg div:hover{background:var(--pri2)}
+#sugg small{color:var(--mut)}
+.cw{position:relative;height:460px}
+dialog{border:none;border-radius:14px;padding:0;width:min(920px,96vw);max-height:92vh;box-shadow:0 20px 60px #0005}
+dialog::backdrop{background:#0006}
+.dh{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;position:sticky;top:0;background:#fff;z-index:2}
+.db{padding:14px 18px;overflow:auto;max-height:calc(92vh - 130px)}
+.df{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;position:sticky;bottom:0;background:#fff}
+details.ic{border:1px solid var(--line);border-radius:10px;margin-bottom:8px;padding:8px 12px}
+details.ic summary{cursor:pointer;font-weight:500}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-top:8px}
+.g label{display:flex;flex-direction:column;font-size:12.5px;color:var(--mut);gap:2px}
+.g input,.g select{color:var(--ink)}
+pre.diag{background:#0f172a;color:#d8e1f5;padding:10px;border-radius:8px;font-size:12px;overflow:auto;max-height:220px;white-space:pre-wrap}
+.note{font-size:13px;color:var(--mut)}
+</style>
+</head>
+<body>
+<header>
+  <h1>สถิติรายจังหวัดของไทย (77 จังหวัด)</h1>
+  <p>ดึงข้อมูลออนไลน์จากฐานข้อมูลเปิดภาครัฐ จัดอันดับ เปรียบเทียบ ทำกราฟ และส่งออก Excel / PNG</p>
+</header>
+<main>
+
+<div class="card">
+  <div class="row">
+    <b>สถานะข้อมูล:</b><span id="statusbar" class="row"></span>
+    <span class="sp"></span>
+    <label class="row" style="gap:4px">ปี
+      <select id="yearEra"><option value="be">พ.ศ.</option><option value="ce">ค.ศ.</option></select>
+    </label>
+    <label class="chip on" style="cursor:pointer">📥 นำเข้าไฟล์ GPP สภาพัฒน์ (.xlsx)<input type="file" id="impFile" accept=".xlsx,.xls" hidden></label>
+    <button id="btnRefresh">⟳ ดึงข้อมูลใหม่จากออนไลน์</button>
+    <button id="btnSettings">⚙ ตั้งค่าแหล่งข้อมูล</button>
+  </div>
+  <div class="row" style="margin-top:8px"><input type="text" id="nesdcUrl" style="flex:1;min-width:280px" placeholder="ลิงก์หน้าเว็บสภาพัฒน์ หรือลิงก์ไฟล์ .xlsx ตรง ๆ"><button id="btnFetchNesdc">🌐 ดึงจากเว็บสภาพัฒน์</button><label class="note" style="display:flex;gap:4px;align-items:center"><input type="checkbox" id="autoNesdc"> ดึงอัตโนมัติทุกครั้งที่เปิดหน้า</label></div>
+  <div class="note" id="importMsg" style="margin-top:6px"></div>
+  <div class="note" id="srcNote" style="margin-top:6px"></div>
+</div>
+
+<div class="tabs">
+  <div class="tab on" data-tab="rank">จัดอันดับทั้ง 77 จังหวัด</div>
+  <div class="tab" data-tab="cmp">เปรียบเทียบรายจังหวัด</div>
+</div>
+
+<!-- ===== จัดอันดับ ===== -->
+<section id="tab-rank" class="card">
+  <h2>ตารางจัดอันดับ (เรียงจากมากไปน้อย)</h2>
+  <div class="row" style="margin-bottom:8px"><b>คอลัมน์ที่แสดง:</b><span id="rankChips" class="row"></span></div>
+  <div class="row" style="margin-bottom:8px">
+    <label>ปีที่แสดง
+      <select id="rankYear"></select>
+    </label>
+    <span class="note">คลิกหัวคอลัมน์เพื่อเรียงจากมากไปน้อย (คลิกซ้ำเพื่อสลับ) · คลิกชื่อภาคเพื่อกรอง</span>
+    <span class="sp"></span>
+    <select id="rankRegion"><option value="">ทุกภาค</option></select>
+    <button id="btnRankXlsx">⬇ บันทึกเป็น Excel</button>
+  </div>
+  <div class="tw"><table id="rankTable"></table></div>
+  <div class="cap" id="rankCap"></div>
+</section>
+
+<!-- ===== เปรียบเทียบ ===== -->
+<section id="tab-cmp" hidden>
+  <div class="card">
+    <h2>1) เลือกจังหวัด (พิมพ์ชื่อจังหวัดภาษาไทย เลือกได้ไม่จำกัด)</h2>
+    <div class="row">
+      <div class="ac">
+        <input type="text" id="provIn" placeholder="พิมพ์ชื่อจังหวัด เช่น ก, เชียง, สกล …" autocomplete="off">
+        <div id="sugg" hidden></div>
+      </div>
+      <select id="addRegion"><option value="">+ เพิ่มทั้งภาค…</option></select>
+    </div>
+    <div class="row" id="selChips" style="margin-top:10px"></div>
+
+    <h2 style="margin-top:16px">2) เลือกหัวข้อข้อมูล</h2>
+    <div class="row" id="cmpChips"></div>
+
+    <h2 style="margin-top:16px">3) รูปแบบตัวเลขในตาราง</h2>
+    <div class="row">
+      <select id="yearMode">
+        <option value="latest">เฉพาะปีล่าสุด</option>
+        <option value="3">ทุก ๆ 3 ปี (นับถอยหลังจากปีล่าสุด)</option>
+        <option value="5">ทุก ๆ 5 ปี</option>
+        <option value="10">ทุก ๆ 10 ปี</option>
+        <option value="all">ทุกปีที่มีข้อมูล</option>
+      </select>
+      <span class="sp"></span>
+      <button class="pri" id="btnRun">▶ ประมวลผล</button>
+      <button id="btnReset">↺ รีเซ็ตหัวข้อ</button>
+    </div>
+    <div class="msg" id="cmpMsg"></div>
+  </div>
+
+  <div class="card" id="outCard" hidden>
+    <div class="row"><h2 style="margin:0">ผลการเปรียบเทียบ</h2><span class="sp"></span>
+      <button id="btnXlsx">⬇ บันทึกเป็น Excel</button></div>
+    <div class="cap" id="outCap"></div>
+    <div class="tw"><table id="outTable"></table></div>
+  </div>
+
+  <div class="card" id="chartCard" hidden>
+    <h2>กราฟ</h2>
+    <div class="row" style="margin-bottom:10px">
+      <label>หัวข้อ <select id="chInd"></select></label>
+      <label>รูปแบบ
+        <select id="chType">
+          <option value="line">เส้น (แนวโน้มตามปี)</option>
+          <option value="area">พื้นที่ใต้เส้น</option>
+          <option value="bar">แท่งแนวตั้ง (จัดกลุ่มตามปี)</option>
+          <option value="stacked">แท่งซ้อน</option>
+          <option value="hbar">แท่งแนวนอน เรียงอันดับ (ปีล่าสุด)</option>
+          <option value="pie">วงกลม (ปีล่าสุด)</option>
+          <option value="doughnut">โดนัท (ปีล่าสุด)</option>
+          <option value="polar">Polar area (ปีล่าสุด)</option>
+          <option value="radar">เรดาร์</option>
+        </select>
+      </label>
+      <label class="chip" style="gap:4px"><input type="checkbox" id="chLabels"> แสดงตัวเลขบนกราฟ</label>
+      <label class="chip" style="gap:4px"><input type="checkbox" id="chCompact"> ย่อตัวเลข (พัน/ล้าน)</label>
+      <span class="sp"></span>
+      <button id="btnPng">⬇ ดาวน์โหลดกราฟ PNG</button>
+    </div>
+    <div class="cw"><canvas id="chart"></canvas></div>
+  </div>
+</section>
+</main>
+
+<!-- ===== ตั้งค่า ===== -->
+<dialog id="dlg">
+  <div class="dh"><b style="font-size:17px">ตั้งค่าแหล่งข้อมูล</b><span class="sp"></span><button id="dClose">✕</button></div>
+  <div class="db">
+    <p class="note">แต่ละหัวข้อดึงจากชุดข้อมูล CKAN (เช่น data.go.th) โดยระบุ <b>รหัสชุดข้อมูล (slug)</b> หรือ URL ไฟล์ CSV/Excel/JSON ตรง ๆ หรืออัปโหลดไฟล์จากเครื่อง
+      ระบบตรวจหาคอลัมน์จังหวัด/ปี/ค่าให้อัตโนมัติ ทั้งตารางแบบยาว (จังหวัด-ปี-ค่า) และแบบกว้าง (ปีเป็นคอลัมน์) ถ้าตรวจผิด ให้กำหนดชื่อคอลัมน์เองแล้วกด “ทดสอบ”
+      เมื่อมีปีใหม่ในแหล่งข้อมูล กด “ดึงข้อมูลใหม่” หน้าเว็บจะแสดงปีล่าสุดเพิ่มให้เองโดยไม่ต้องแก้โค้ด</p>
+    <div class="g" style="margin-bottom:10px">
+      <label>CORS proxy (เว้นว่างถ้าไม่จำเป็น) — ใส่ prefix หรือ รูปแบบที่มี {url}
+        <input type="text" id="proxy" placeholder="เช่น https://my-proxy.example/?u={url}"></label>
+      <label>ค้นหาชุดข้อมูลใน data.go.th
+        <div class="row"><input type="text" id="finderQ" placeholder="เช่น ประชากร จังหวัด" style="flex:1"><button id="finderGo">ค้นหา</button></div></label>
+    </div>
+    <div id="finderRes" class="note" style="margin-bottom:10px"></div>
+    <div id="cfgList"></div>
+    <button id="addInd">+ เพิ่มหัวข้อข้อมูลใหม่</button>
+  </div>
+  <div class="df"><button id="dResetCfg">คืนค่าเริ่มต้น</button><button class="pri" id="dSave">บันทึกและดึงข้อมูล</button></div>
+</dialog>
+
+<script>
+'use strict';
+/* ====================== จังหวัด ====================== */
+const REG={
+ 'เหนือ':['เชียงราย','เชียงใหม่','น่าน','พะเยา','แพร่','แม่ฮ่องสอน','ลำปาง','ลำพูน','อุตรดิตถ์'],
+ 'ตะวันออกเฉียงเหนือ':['กาฬสินธุ์','ขอนแก่น','ชัยภูมิ','นครพนม','นครราชสีมา','บึงกาฬ','บุรีรัมย์','มหาสารคาม','มุกดาหาร','ยโสธร','ร้อยเอ็ด','เลย','สกลนคร','สุรินทร์','ศรีสะเกษ','หนองคาย','หนองบัวลำภู','อุดรธานี','อุบลราชธานี','อำนาจเจริญ'],
+ 'กลาง':['กรุงเทพมหานคร','กำแพงเพชร','ชัยนาท','นครนายก','นครปฐม','นครสวรรค์','นนทบุรี','ปทุมธานี','พระนครศรีอยุธยา','พิจิตร','พิษณุโลก','เพชรบูรณ์','ลพบุรี','สมุทรปราการ','สมุทรสงคราม','สมุทรสาคร','สิงห์บุรี','สุโขทัย','สุพรรณบุรี','สระบุรี','อ่างทอง','อุทัยธานี'],
+ 'ตะวันออก':['จันทบุรี','ฉะเชิงเทรา','ชลบุรี','ตราด','ปราจีนบุรี','ระยอง','สระแก้ว'],
+ 'ตะวันตก':['กาญจนบุรี','ตาก','ประจวบคีรีขันธ์','เพชรบุรี','ราชบุรี'],
+ 'ใต้':['กระบี่','ชุมพร','ตรัง','นครศรีธรรมราช','นราธิวาส','ปัตตานี','พังงา','พัทลุง','ภูเก็ต','ระนอง','สงขลา','สตูล','สุราษฎร์ธานี','ยะลา']
+};
+const PROVS=[];for(const [r,l] of Object.entries(REG))for(const n of l)PROVS.push({n,r});
+PROVS.sort((a,b)=>a.n.localeCompare(b.n,'th'));
+const PIDX=new Map(PROVS.map(p=>[p.n,p]));
+const ALIAS={'กรุงเทพ':'กรุงเทพมหานคร','กรุงเทพฯ':'กรุงเทพมหานคร','กทม':'กรุงเทพมหานคร','อยุธยา':'พระนครศรีอยุธยา','โคราช':'นครราชสีมา'};
+function normProv(s){
+  s=String(s==null?'':s).replace(/[\u200b\s]+/g,'').replace(/^(จังหวัด|จ\.)/,'').replace(/[.\u0e2f]+$/,'');
+  s=ALIAS[s]||s; return PIDX.has(s)?s:null;
+}
+
+/* ====================== ค่าตั้งต้น ====================== */
+const DEF_CFG=[
+ {id:'gpp',label:'ผลิตภัณฑ์มวลรวมจังหวัด (GPP)',unit:'ล้านบาท',dec:0,type:'file'},
+ {id:'gppc',label:'GPP ต่อหัว',unit:'บาท/คน',dec:0,type:'file',derive:'gppc'},
+ {id:'pop',label:'จำนวนประชากร',unit:'คน',dec:0,type:'file'},
+ {id:'agri',label:'GPP ภาคเกษตร',unit:'ล้านบาท',dec:0,type:'file'},
+ {id:'industry',label:'GPP ภาคอุตสาหกรรม',unit:'ล้านบาท',dec:0,type:'file'},
+ {id:'services',label:'GPP ภาคบริการ',unit:'ล้านบาท',dec:0,type:'file'},
+ {id:'gppreal',label:'GPP ปริมาณลูกโซ่ (ปีอ้างอิง 2545)',unit:'ล้านบาท',dec:0,type:'file'},
+ {id:'area',label:'ขนาดพื้นที่',unit:'ตร.กม.',dec:0,type:'none'},
+ {id:'density',label:'ความหนาแน่นประชากร',unit:'คน/ตร.กม.',dec:1,type:'none',derive:'density'},
+ {id:'income',label:'รายได้รวมของประชากร',unit:'ล้านบาท',dec:0,type:'none'},
+ {id:'hhincome',label:'รายได้เฉลี่ยครัวเรือนต่อเดือน',unit:'บาท',dec:0,type:'none'},
+ {id:'poverty',label:'สัดส่วนคนจน',unit:'ร้อยละ',dec:2,type:'none'},
+ {id:'unemp',label:'อัตราการว่างงาน',unit:'ร้อยละ',dec:2,type:'none'}
+];
+const LS='thprov.v2.';
+const lsGet=(k,d)=>{try{const v=localStorage.getItem(LS+k);return v?JSON.parse(v):d}catch(e){return d}};
+const lsSet=(k,v)=>{try{localStorage.setItem(LS+k,JSON.stringify(v))}catch(e){}};
+
+const S={cfg:lsGet('cfg',null)||JSON.parse(JSON.stringify(DEF_CFG)),proxy:lsGet('proxy',''),data:{},st:{},raw:{},
+  be:true,rankCols:[],cmpInds:[],sel:[],sort:{k:null,dir:-1},out:null,chart:null};
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const yl=y=>S.be?y+543:y;
+const cfgOf=id=>S.cfg.find(c=>c.id===id);
+const fmt=(v,d)=>v==null?'–':Number(v).toLocaleString('th-TH',{minimumFractionDigits:0,maximumFractionDigits:d==null?2:d});
+const hasData=id=>S.data[id]&&Object.keys(S.data[id]).length>0;
+function yearsOf(id){const s=new Set();const d=S.data[id]||{};for(const p in d)for(const y in d[p])s.add(+y);return [...s].sort((a,b)=>a-b)}
+const latestYear=id=>{const y=yearsOf(id);return y.length?y[y.length-1]:null};
+
+/* ====================== ดึงข้อมูล ====================== */
+const proxied=u=>S.proxy?(S.proxy.includes('{url}')?S.proxy.replace('{url}',encodeURIComponent(u)):S.proxy+u):u;
+const PUBLIC_PROXIES=['https://corsproxy.io/?url={url}','https://api.allorigins.win/raw?url={url}','https://api.codetabs.com/v1/proxy?quest={url}'];
+async function getBuf(u){
+  if(S.proxy){const r=await fetch(proxied(u));if(!r.ok)throw new Error('HTTP '+r.status+' จาก '+u);return r.arrayBuffer()}
+  let last;
+  try{const r=await fetch(u);if(!r.ok)throw Object.assign(new Error('HTTP '+r.status+' จาก '+u),{http:true});return await r.arrayBuffer()}
+  catch(e){if(e.http)throw e;last=e}
+  for(const p of PUBLIC_PROXIES){
+    try{const r=await fetch(p.replace('{url}',encodeURIComponent(u)));if(!r.ok){last=new Error('HTTP '+r.status+' (proxy)');continue}return await r.arrayBuffer()}
+    catch(e){last=e}
+  }
+  throw last;
+}
+function dec(buf){let t=new TextDecoder('utf-8').decode(buf);
+  if((t.match(/\uFFFD/g)||[]).length>3){try{t=new TextDecoder('windows-874').decode(buf)}catch(e){}}
+  return t.replace(/^\uFEFF/,'')}
+async function getJSON(u){return JSON.parse(dec(await getBuf(u)))}
+function bufToRows(buf,name,c){
+  if(/\.xlsx?$/i.test(name||'')||(buf.byteLength>4&&new Uint8Array(buf)[0]===0x50&&new Uint8Array(buf)[1]===0x4b)||(new Uint8Array(buf)[0]===0xD0)){
+    const wb=XLSX.read(buf,{type:'array'});const ws=wb.Sheets[(c&&c.sheet)||wb.SheetNames[0]];
+    if(!ws)throw new Error('ไม่พบชีตในไฟล์ Excel');return XLSX.utils.sheet_to_json(ws,{defval:''});
+  }
+  const t=dec(buf);
+  if(/^\s*[\[{]/.test(t)){const j=JSON.parse(t);const a=Array.isArray(j)?j:(j.result&&j.result.records)||j.records||j.data;if(!Array.isArray(a))throw new Error('รูปแบบ JSON ไม่รองรับ');return a}
+  return Papa.parse(t,{header:true,skipEmptyLines:true}).data;
+}
+async function fetchCkan(c){
+  const base=(c.base||'https://data.go.th').replace(/\/$/,'');
+  if(!c.dataset)throw new Error('ยังไม่ได้ระบุรหัสชุดข้อมูล (dataset)');
+  const pk=await getJSON(`${base}/api/3/action/package_show?id=${encodeURIComponent(c.dataset)}`);
+  if(!pk.success)throw new Error('package_show ไม่สำเร็จ');
+  const rs=pk.result.resources||[];
+  const r=c.resourceId?rs.find(x=>x.id===c.resourceId):(rs.find(x=>/csv/i.test(x.format||''))||rs.find(x=>x.datastore_active)||rs[0]);
+  if(!r)throw new Error('ไม่พบไฟล์ข้อมูล (resource) ในชุดข้อมูลนี้');
+  if(r.datastore_active){
+    let off=0,all=[],total=Infinity;
+    while(off<total&&off<500000){
+      const j=await getJSON(`${base}/api/3/action/datastore_search?resource_id=${r.id}&limit=5000&offset=${off}`);
+      const rec=j.result.records||[];total=j.result.total||rec.length;
+      all=all.concat(rec.map(x=>{const o={...x};delete o._id;return o}));
+      if(!rec.length)break;off+=rec.length;
+    }
+    return all;
+  }
+  return bufToRows(await getBuf(r.url),r.url,c);
+}
+async function fetchUrl(c){if(!c.url)throw new Error('ยังไม่ได้ระบุ URL');return bufToRows(await getBuf(c.url),c.url,c)}
+
+/* ====================== แปลงตาราง -> {จังหวัด:{ปี:ค่า}} ====================== */
+const num=v=>{if(typeof v==='number')return isFinite(v)?v:null;if(v==null)return null;
+  const s=String(v).replace(/[,\s%]/g,'');if(s===''||s==='-'||/^n\/?a$/i.test(s))return null;const n=parseFloat(s);return isFinite(n)?n:null};
+const toYear=v=>{const m=String(v==null?'':v).match(/(19|20|25)\d\d/);if(!m)return null;let y=+m[0];return y>2400?y-543:y};
+function rowsToSeries(rows,c){
+  if(!rows||!rows.length)throw new Error('ไม่พบแถวข้อมูล');
+  rows=rows.map(r=>{const o={};for(const k in r)o[String(k).trim()]=r[k];return o});
+  let H=Object.keys(rows[0]);
+  if(c.filterCol&&c.filterVal!==''&&c.filterVal!=null)rows=rows.filter(r=>String(r[c.filterCol]==null?'':r[c.filterCol]).trim()===String(c.filterVal).trim());
+  let pc=c.provCol&&H.includes(c.provCol)?c.provCol:null;
+  if(!pc){let best=0;for(const h of H){let n=0;for(const r of rows.slice(0,600))if(normProv(r[h]))n++;if(n>best){best=n;pc=h}}}
+  if(!pc)throw new Error('ไม่พบคอลัมน์ที่เป็นชื่อจังหวัด (ลองกำหนด “คอลัมน์จังหวัด” เอง)');
+  const mult=Number(c.mult)||1,agg=c.agg||'first',acc={};
+  const put=(p,y,v)=>{if(v==null||y==null)return;v*=mult;const a=acc[p]||(acc[p]={});
+    if(a[y]==null)a[y]=v;else if(agg==='sum')a[y]+=v;else if(agg==='last')a[y]=v;else if(agg==='max')a[y]=Math.max(a[y],v);};
+  const yh=H.filter(h=>/^(19|20|25)\d\d$/.test(h));
+  let info={provCol:pc,headers:H};
+  if(yh.length>=2&&!c.yearCol){
+    info.layout='กว้าง (ปีเป็นคอลัมน์)';
+    for(const r of rows){const p=normProv(r[pc]);if(!p)continue;for(const h of yh)put(p,toYear(h),num(r[h]))}
+  }else{
+    let yc=c.yearCol&&H.includes(c.yearCol)?c.yearCol:null;
+    if(!yc){let best=0;for(const h of H){if(h===pc)continue;let n=0;for(const r of rows.slice(0,400))if(/^\s*(19|20|25)\d\d\s*$/.test(String(r[h])))n++;
+      const bonus=/ปี|year/i.test(h)?1000:0;if(n+bonus>best&&n>0){best=n+bonus;yc=h}}}
+    let vc=c.valueCol&&H.includes(c.valueCol)?c.valueCol:null;
+    if(!vc){for(const h of H){if(h===pc||h===yc)continue;let n=0,t=0;for(const r of rows.slice(0,200)){t++;if(num(r[h])!=null)n++}if(t&&n/t>.8){vc=h;break}}}
+    if(!vc)throw new Error('ไม่พบคอลัมน์ตัวเลข (ลองกำหนด “คอลัมน์ค่า” เอง)');
+    info.layout='ยาว (หนึ่งแถวต่อ จังหวัด-ปี)';info.yearCol=yc;info.valueCol=vc;
+    for(const r of rows){const p=normProv(r[pc]);if(!p)continue;put(p,yc?toYear(r[yc]):(c.fixedYear?+c.fixedYear:null),num(r[vc]))}
+  }
+  const np=Object.keys(acc).length;if(!np)throw new Error('อ่านค่าไม่ได้เลย (จับคู่ชื่อจังหวัดกับตัวเลขไม่สำเร็จ)');
+  const ys=[...new Set(Object.values(acc).flatMap(o=>Object.keys(o).map(Number)))].sort((a,b)=>a-b);
+  info.nProv=np;info.yMin=ys[0];info.yMax=ys[ys.length-1];
+  info.sample=rows.slice(0,3);
+  return {series:acc,info};
+}
+
+async function loadInd(c,useCache){
+  if(c.type==='none'||c.derive&&c.type==='none'){S.st[c.id]={s:'idle',m:c.derive?'คำนวณอัตโนมัติ':'ยังไม่ตั้งค่า'};return}
+  const cached=lsGet('data.'+c.id,null);
+  if(cached&&!S.data[c.id])S.data[c.id]=cached;
+  if(c.type==='file'){S.st[c.id]=cached?okSt(c.id,'ไฟล์ที่อัปโหลด'):{s:'err',m:'ยังไม่ได้อัปโหลดไฟล์'};return}
+  S.st[c.id]={s:'load',m:'กำลังโหลด…'};renderStatus();
+  try{
+    const rows=c.type==='ckan'?await fetchCkan(c):await fetchUrl(c);
+    const {series,info}=rowsToSeries(rows,c);
+    S.data[c.id]=series;S.raw[c.id]=info;lsSet('data.'+c.id,series);
+    S.st[c.id]=okSt(c.id,'ออนไลน์');
+  }catch(e){
+    const hint=/Failed to fetch|NetworkError|Load failed/i.test(e.message)?' (อาจติด CORS — ลองตั้ง CORS proxy หรืออัปโหลดไฟล์แทน)':'';
+    S.st[c.id]={s:'err',m:(cached?'ใช้ข้อมูลแคช · ':'')+'ผิดพลาด: '+e.message+hint};
+    if(!cached)delete S.data[c.id];
+  }
+}
+function okSt(id,src){const ys=yearsOf(id);return {s:'ok',m:`${src} · ${Object.keys(S.data[id]).length} จังหวัด · ${yl(ys[0])}–${yl(ys[ys.length-1])}`}}
+function derive(){
+  for(const c of S.cfg){
+    if(!c.derive||c.type!=='none')continue;
+    const out={};
+    if(c.derive==='density'&&hasData('pop')&&hasData('area')){
+      for(const p in S.data.pop){const ay=S.data.area[p];if(!ay)continue;const ak=Object.keys(ay).map(Number).sort((a,b)=>a-b);const a=ay[ak[ak.length-1]];
+        if(!a)continue;out[p]={};for(const y in S.data.pop[p])out[p][y]=S.data.pop[p][y]/a}
+    }
+    if(c.derive==='gppc'&&hasData('gpp')&&hasData('pop')){
+      const g=cfgOf('gpp'),mg=/ล้าน/.test(g?g.unit:'ล้าน')?1e6:1;
+      for(const p in S.data.gpp){if(!S.data.pop[p])continue;out[p]={};for(const y in S.data.gpp[p])if(S.data.pop[p][y])out[p][y]=S.data.gpp[p][y]*mg/S.data.pop[p][y]}
+    }
+    if(Object.keys(out).length){S.data[c.id]=out;S.st[c.id]=okSt(c.id,'คำนวณจากหัวข้ออื่น')}
+    else{delete S.data[c.id];S.st[c.id]={s:'idle',m:'คำนวณอัตโนมัติเมื่อมีข้อมูลต้นทาง'}}
+  }
+}
+async function loadAll(){
+  const jobs=S.cfg.map(c=>loadInd(c));
+  jobs.forEach(j=>j.then(()=>{derive();afterLoad()}));
+  await Promise.all(jobs);derive();afterLoad(true);
+}
+
+
+/* ====================== นำเข้าไฟล์ GPP ของสภาพัฒน์ (.xlsx) ====================== */
+const EN2TH={'KHONKAEN':'ขอนแก่น','UDONTHANI':'อุดรธานี','LOEI':'เลย','NONGKHAI':'หนองคาย','MUKDAHAN':'มุกดาหาร','NAKHONPHANOM':'นครพนม','SAKONNAKHON':'สกลนคร','KALASIN':'กาฬสินธุ์','NAKHONRATCHASIMA':'นครราชสีมา','CHAIYAPHUM':'ชัยภูมิ','YASOTHON':'ยโสธร','UBONRATCHATHANI':'อุบลราชธานี','ROIET':'ร้อยเอ็ด','BURIRAM':'บุรีรัมย์','SURIN':'สุรินทร์','MAHASARAKHAM':'มหาสารคาม','SISAKET':'ศรีสะเกษ','NONGBUALAMPHU':'หนองบัวลำภู','AMNATCHAREON':'อำนาจเจริญ','BUENGKAN':'บึงกาฬ',
+'CHIANGMAI':'เชียงใหม่','LAMPANG':'ลำปาง','UTTARADIT':'อุตรดิตถ์','MAEHONGSON':'แม่ฮ่องสอน','CHIANGRAI':'เชียงราย','PHRAE':'แพร่','LAMPHUN':'ลำพูน','NAN':'น่าน','PHAYAO':'พะเยา','NAKHONSAWAN':'นครสวรรค์','PHITSANULOK':'พิษณุโลก','KAMPHAENGPHET':'กำแพงเพชร','UTHAITHANI':'อุทัยธานี','SUKHOTHAI':'สุโขทัย','TAK':'ตาก','PHICHIT':'พิจิตร','PHETCHABUN':'เพชรบูรณ์',
+'PHUKET':'ภูเก็ต','SURATTHANI':'สุราษฎร์ธานี','RANONG':'ระนอง','PHANGNGA':'พังงา','KRABI':'กระบี่','CHUMPHON':'ชุมพร','NAKHONSITHAMMARAT':'นครศรีธรรมราช','SONGKHLA':'สงขลา','SATUN':'สตูล','YALA':'ยะลา','TRANG':'ตรัง','NARATHIWAT':'นราธิวาส','PHATTHALUNG':'พัทลุง','PATTANI':'ปัตตานี',
+'CHONBURI':'ชลบุรี','CHACHOENGSAO':'ฉะเชิงเทรา','RAYONG':'ระยอง','TRAT':'ตราด','CHANTHABURI':'จันทบุรี','NAKHONNAYOK':'นครนายก','PRACHINBURI':'ปราจีนบุรี','SAKAEW':'สระแก้ว',
+'RATCHABURI':'ราชบุรี','KANCHANABURI':'กาญจนบุรี','PHACHUAPKHIRIKHAN':'ประจวบคีรีขันธ์','PHETCHABURI':'เพชรบุรี','SUPHANBURI':'สุพรรณบุรี','SAMUTSONGKHRAM':'สมุทรสงคราม',
+'SARABURI':'สระบุรี','SINGBURI':'สิงห์บุรี','CHAINAT':'ชัยนาท','ANGTHONG':'อ่างทอง','LOPBURI':'ลพบุรี','PHRANAKHONSRIAYUTHAYA':'พระนครศรีอยุธยา',
+'BANGKOKMETROPOLIS':'กรุงเทพมหานคร','SAMUTPRAKAN':'สมุทรปราการ','PATHUMTHANI':'ปทุมธานี','SAMUTSAKHON':'สมุทรสาคร','NAKHONPATHOM':'นครปฐม','NONTHABURI':'นนทบุรี'};
+const NESDC_ROWS={'agriculture':['agri',1],'industrial':['industry',1],'services':['services',1],
+  'gross provincial product (gpp)':['gpp',1],'gpp per capita (baht)':['gppc',1],'population (1,000 persons)':['pop',1000]};
+/* sheets: [[ชื่อชีต, แถว 2 มิติ], ...] -> {series:{id:{จังหวัด:{ปี:ค่า}}}, nProv, unmatched:[]} */
+function parseNesdcGpp(sheets){
+  const series={},seen=new Set(),unmatched=new Set();
+  const put=(id,p,y,v)=>{if(typeof v!=='number'||!isFinite(v))return;((series[id]||(series[id]={}))[p]||(series[id][p]={}))[y]=v};
+  for(const [,rows] of sheets){
+    let mode=null,prov=null,years=null;
+    for(const r of rows){
+      const a=typeof r[0]==='string'?r[0].replace(/\s+/g,' ').trim():'';
+      if(/^GROSS PROVINCIAL PRODUCT (AT CURRENT|CHAIN VOLUME)/i.test(a)){mode=/CHAIN VOLUME/i.test(a)?'cvm':'cur';prov=null;years=null;continue}
+      const m=a.match(/^(\d{4}) ?- ?(.+)$/);
+      if(m){const k=m[2].toUpperCase().replace(/[^A-Z]/g,'');prov=EN2TH[k]||null;if(!prov)unmatched.add(m[2]);years=null;continue}
+      if(!prov||!mode)continue;
+      if(!years&&(a===''||r[0]==null)){
+        const ys={};r.forEach((c,i)=>{if(i>0&&c!=null){const mm=String(c).trim().match(/^((?:19|20)\d\d)[a-z]?$/i);if(mm)ys[i]=+mm[1]}});
+        if(Object.keys(ys).length>=3)years=ys;continue}
+      if(!years)continue;
+      const lab=a.toLowerCase();
+      let id=null,mul=1;
+      if(mode==='cur'&&NESDC_ROWS[lab]){[id,mul]=NESDC_ROWS[lab]}
+      else if(mode==='cvm'&&lab==='gross provincial product (cvms)'){id='gppreal'}
+      if(!id)continue;
+      seen.add(prov);
+      for(const i in years)put(id,prov,years[i],r[i]==null?null:r[i]*mul);
+    }
+  }
+  return {series,nProv:seen.size,unmatched:[...unmatched]};
+}
+async function importNesdc(file){return importNesdcBuf(await file.arrayBuffer(),file.name)}
+async function importNesdcBuf(buf,label){
+  const msg=$('#importMsg');msg.textContent='กำลังอ่านไฟล์…';
+  try{
+    const wb=XLSX.read(buf,{type:'array'});
+    const sheets=wb.SheetNames.map(n=>[n,XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:null,raw:true})]);
+    const {series,nProv,unmatched}=parseNesdcGpp(sheets);
+    if(!series.gpp||nProv<1)throw new Error('ไม่พบบล็อกข้อมูลรายจังหวัด (รูปแบบไฟล์ GPP ของสภาพัฒน์: ชีต NE/NO/SO/EA/WE/CE/BKK&VIC)');
+    for(const id in series){
+      let c=cfgOf(id);
+      if(!c){const d=DEF_CFG.find(x=>x.id===id);c=JSON.parse(JSON.stringify(d||{id,label:id,unit:'',dec:0}));S.cfg.push(c)}
+      c.type='file';S.data[id]=series[id];lsSet('data.'+id,series[id]);S.st[id]=okSt(id,'ไฟล์ GPP สภาพัฒน์');
+    }
+    lsSet('cfg',S.cfg);derive();afterLoad(true);
+    const ys=yearsOf('gpp');
+    msg.innerHTML=`✓ นำเข้าสำเร็จ (${esc(label||'')}): ${nProv} จังหวัด · ปี ${yl(ys[0])}–${yl(ys[ys.length-1])} · หัวข้อที่ได้: ${Object.keys(series).map(i=>cfgOf(i).label).join(', ')}`+(unmatched.length?`<br>⚠ ชื่อจังหวัดที่จับคู่ภาษาไทยไม่ได้: ${esc(unmatched.join(', '))}`:'')+(nProv<77?`<br>⚠ พบเพียง ${nProv} จังหวัด (ควรได้ 77)`:'');
+  }catch(e){msg.textContent='✗ '+e.message}
+}
+
+
+const NESDC_PAGE='https://www.nesdc.go.th/info/gross-regional-and-provincial-product/';
+async function fetchNesdc(){
+  const msg=$('#importMsg'),page=$('#nesdcUrl').value.trim()||NESDC_PAGE;lsSet('nesdcUrl',page);
+  msg.textContent='กำลังเปิดหน้าเว็บสภาพัฒน์…';
+  try{
+    let url=page;
+    if(!/\.xlsx?($|\?)/i.test(page)){
+      const html=dec(await getBuf(page));
+      const all=[...new Set([...html.matchAll(/href\s*=\s*["']([^"']+\.xlsx?(?:\?[^"']*)?)["']/gi)].map(m=>{try{return new URL(m[1].replace(/&amp;/g,'&'),page).href}catch(e){return null}}).filter(Boolean))];
+      const dd=u=>{try{return decodeURIComponent(u)}catch(e){return u}};
+      const g=all.filter(u=>/gpp|grp|gross/i.test(dd(u)));
+      const cand=(g.length?g:all).map(u=>({u,y:Math.max(0,...(dd(u).match(/(?:19|20)\d\d/g)||[]).map(Number))})).sort((a,b)=>b.y-a.y);
+      if(!cand.length)throw new Error('ไม่พบลิงก์ไฟล์ .xlsx ในหน้านั้น (อาจโหลดลิงก์ด้วย JavaScript) — คลิกขวาที่ปุ่มดาวน์โหลดแล้ว “คัดลอกที่อยู่ลิงก์” มาวางในช่อง แทนลิงก์หน้าเว็บ');
+      url=cand[0].u;
+    }
+    msg.textContent='พบไฟล์: '+url+' — กำลังดาวน์โหลด…';
+    await importNesdcBuf(await getBuf(url),url.split('/').pop());
+  }catch(e){
+    const net=/Failed to fetch|NetworkError|Load failed/i.test(e.message)?' (เบราว์เซอร์/พร็อกซีเข้าถึงเว็บไม่ได้ — ใช้ปุ่มนำเข้าไฟล์ที่ดาวน์โหลดเองแทน)':'';
+    msg.textContent='✗ ดึงจากเว็บไม่สำเร็จ: '+e.message+net;
+  }
+}
+
+/* ====================== UI: สถานะ / ชิป ====================== */
+function renderStatus(){
+  $('#statusbar').innerHTML=S.cfg.map(c=>{const s=S.st[c.id]||{s:'idle',m:'รอ'};
+    return `<span class="stat ${s.s==='ok'?'ok':s.s==='err'?'err':s.s==='load'?'load':''}" title="${esc(s.m)}">${esc(c.label)}: ${esc(s.m.length>46?s.m.slice(0,46)+'…':s.m)}</span>`}).join('');
+}
+function afterLoad(final){
+  renderStatus();
+  const have=S.cfg.filter(c=>hasData(c.id)).map(c=>c.id);
+  S.rankCols=S.rankCols.filter(i=>have.includes(i));S.cmpInds=S.cmpInds.filter(i=>have.includes(i));
+  if(!S.rankCols.length)S.rankCols=have.slice(0,4);
+  if(!S.cmpInds.length)S.cmpInds=have.slice(0,3);
+  renderChips();renderRankYears();renderRank();
+  const srcs=S.cfg.filter(c=>c.type==='ckan'||c.type==='url').map(c=>c.label+' ← '+(c.type==='ckan'?(c.base||'data.go.th')+' / '+(c.dataset||'?'):c.url)).join(' | ');
+  $('#srcNote').textContent=srcs?'แหล่งข้อมูล: '+srcs:'';
+}
+function chipHTML(list,sel,cls){return S.cfg.map(c=>`<span class="chip ${sel.includes(c.id)?'on':''} ${hasData(c.id)?'':'dim'}" data-i="${c.id}" title="${hasData(c.id)?'':'ยังไม่มีข้อมูล — ตั้งค่าแหล่งข้อมูลก่อน'}">${esc(c.label)} <small>(${esc(c.unit)})</small></span>`).join('')}
+function renderChips(){
+  $('#rankChips').innerHTML=chipHTML(S.cfg,S.rankCols);
+  $('#cmpChips').innerHTML=chipHTML(S.cfg,S.cmpInds);
+  $('#selChips').innerHTML=S.sel.length?S.sel.map(p=>`<span class="chip on" data-p="${p}">${p} <span class="x">✕</span></span>`).join('')+`<button id="clrSel">ล้างจังหวัดทั้งหมด</button>`:'<span class="note">ยังไม่ได้เลือกจังหวัด</span>';
+}
+$('#rankChips').onclick=e=>{const t=e.target.closest('.chip');if(!t||t.classList.contains('dim'))return;toggle(S.rankCols,t.dataset.i);renderChips();renderRank()};
+$('#cmpChips').onclick=e=>{const t=e.target.closest('.chip');if(!t||t.classList.contains('dim'))return;toggle(S.cmpInds,t.dataset.i);renderChips()};
+const toggle=(a,v)=>{const i=a.indexOf(v);i<0?a.push(v):a.splice(i,1)};
+$('#selChips').onclick=e=>{
+  if(e.target.id==='clrSel'){S.sel=[];renderChips();return}
+  const t=e.target.closest('.chip');if(t){S.sel=S.sel.filter(p=>p!==t.dataset.p);renderChips()}};
+
+/* ====================== จัดอันดับ ====================== */
+function renderRankYears(){
+  const ys=[...new Set(S.cfg.flatMap(c=>yearsOf(c.id)))].sort((a,b)=>b-a);const cur=$('#rankYear').value||'latest';
+  $('#rankYear').innerHTML='<option value="latest">ปีล่าสุดของแต่ละหัวข้อ</option>'+ys.map(y=>`<option value="${y}">${yl(y)}</option>`).join('');
+  $('#rankYear').value=[...$('#rankYear').options].some(o=>o.value===cur)?cur:'latest';
+}
+function valAt(id,p,ysel){const y=ysel==='latest'?latestYear(id):+ysel;const v=(S.data[id]&&S.data[id][p]||{})[y];return {v:v==null?null:v,y}}
+function rankData(){
+  const ysel=$('#rankYear').value||'latest',reg=$('#rankRegion').value;
+  let rows=PROVS.filter(p=>!reg||p.r===reg).map(p=>({p:p.n,r:p.r,vals:Object.fromEntries(S.rankCols.map(id=>[id,valAt(id,p.n,ysel)]))}));
+  const k=S.sort.k&&S.rankCols.includes(S.sort.k)?S.sort.k:S.rankCols[0];S.sort.k=k;
+  if(k)rows.sort((a,b)=>{const x=a.vals[k].v,y=b.vals[k].v;if(x==null&&y==null)return 0;if(x==null)return 1;if(y==null)return -1;return (y-x)*(S.sort.dir===-1?1:-1)});
+  return {rows,ysel};
+}
+function renderRank(){
+  const t=$('#rankTable');
+  if(!S.rankCols.length){t.innerHTML='<tr><td class="l">ยังไม่มีข้อมูลที่โหลดได้ — กด “ตั้งค่าแหล่งข้อมูล” เพื่อกำหนดแหล่งหรืออัปโหลดไฟล์</td></tr>';$('#rankCap').textContent='';return}
+  const {rows,ysel}=rankData();
+  const head='<tr><th class="l">อันดับ</th><th class="l">จังหวัด</th><th class="l">ภาค</th>'+S.rankCols.map(id=>{const c=cfgOf(id);const y=ysel==='latest'?latestYear(id):+ysel;
+    return `<th data-k="${id}">${esc(c.label)}<br><small>${esc(c.unit)} · ปี ${y?yl(y):'–'} ${S.sort.k===id?(S.sort.dir===-1?'▼':'▲'):''}</small></th>`}).join('')+'</tr>';
+  t.innerHTML=head+rows.map((r,i)=>`<tr><td class="l">${i+1}</td><td class="l"><b>${r.p}</b></td><td class="l">${r.r}</td>`+S.rankCols.map(id=>`<td>${fmt(r.vals[id].v,cfgOf(id).dec)}</td>`).join('')+'</tr>').join('');
+  $('#rankCap').textContent=`ตารางจัดอันดับ ${rows.length} จังหวัด เรียงตาม “${cfgOf(S.sort.k).label}” จาก${S.sort.dir===-1?'มากไปน้อย':'น้อยไปมาก'} · ช่อง “–” คือไม่มีข้อมูลของปีนั้นในแหล่งข้อมูล · ปีที่ใช้อาจต่างกันตามหัวข้อเมื่อเลือก “ปีล่าสุดของแต่ละหัวข้อ”`;
+}
+$('#rankTable').onclick=e=>{const th=e.target.closest('th[data-k]');if(!th)return;
+  if(S.sort.k===th.dataset.k)S.sort.dir*=-1;else{S.sort.k=th.dataset.k;S.sort.dir=-1}renderRank()};
+$('#rankYear').onchange=renderRank;$('#rankRegion').onchange=renderRank;
+for(const r of Object.keys(REG)){for(const id of ['#rankRegion','#addRegion'])$(id).insertAdjacentHTML('beforeend',`<option value="${r}">${r}</option>`)}
+$('#btnRankXlsx').onclick=()=>{
+  const {rows,ysel}=rankData();if(!rows.length)return;
+  const hdr=['อันดับ','จังหวัด','ภาค',...S.rankCols.map(id=>{const c=cfgOf(id);const y=ysel==='latest'?latestYear(id):+ysel;return `${c.label} (${c.unit}) ปี ${yl(y)}`})];
+  const aoa=[['ตารางจัดอันดับจังหวัด · '+$('#rankCap').textContent],[],hdr,...rows.map((r,i)=>[i+1,r.p,r.r,...S.rankCols.map(id=>r.vals[id].v)])];
+  saveXlsx(aoa,'จัดอันดับ','thai-province-ranking.xlsx');
+};
+function saveXlsx(aoa,name,file,extra){
+  const wb=XLSX.utils.book_new();const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=aoa[2]?aoa[2].map((_,i)=>({wch:i<3?18:22})):[];
+  XLSX.utils.book_append_sheet(wb,ws,name);
+  if(extra)XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(extra),'ที่มาข้อมูล');
+  XLSX.writeFile(wb,file);
+}
+
+/* ====================== ค้นหาจังหวัด (autocomplete) ====================== */
+const inp=$('#provIn'),box=$('#sugg');let cur=[],hi=0;
+function suggest(){
+  const q=inp.value.replace(/[\s,]+/g,'').replace(/^(จังหวัด|จ\.)/,'');
+  if(!q){box.hidden=true;return}
+  const ok=p=>!S.sel.includes(p.n);
+  const aliasHit=Object.keys(ALIAS).filter(a=>a.startsWith(q)).map(a=>PIDX.get(ALIAS[a]));
+  cur=[...new Map([...PROVS.filter(p=>p.n.startsWith(q)),...aliasHit,...PROVS.filter(p=>p.n.includes(q))].filter(Boolean).filter(ok).map(p=>[p.n,p])).values()];
+  hi=0;
+  box.innerHTML=cur.length?cur.map((p,i)=>`<div data-n="${p.n}" class="${i===0?'hi':''}"><span>${p.n}</span><small>${p.r}</small></div>`).join(''):'<div><small>ไม่พบจังหวัดที่ตรงกัน</small></div>';
+  box.hidden=false;
+}
+function addProv(n){if(n&&!S.sel.includes(n))S.sel.push(n);inp.value='';box.hidden=true;renderChips();inp.focus()}
+inp.oninput=suggest;
+inp.onkeydown=e=>{
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if(!cur.length)return;hi=(hi+(e.key==='ArrowDown'?1:-1)+cur.length)%cur.length;
+    [...box.children].forEach((d,i)=>d.classList.toggle('hi',i===hi));box.children[hi]&&box.children[hi].scrollIntoView({block:'nearest'})}
+  else if(e.key==='Enter'){e.preventDefault();if(cur[hi]&&!box.hidden)addProv(cur[hi].n)}
+  else if(e.key==='Escape')box.hidden=true;
+};
+box.onmousedown=e=>{const d=e.target.closest('div[data-n]');if(d){e.preventDefault();addProv(d.dataset.n)}};
+inp.onblur=()=>setTimeout(()=>box.hidden=true,120);
+$('#addRegion').onchange=e=>{const r=e.target.value;if(r){PROVS.filter(p=>p.r===r).forEach(p=>{if(!S.sel.includes(p.n))S.sel.push(p.n)});renderChips()}e.target.value=''};
+
+/* ====================== ประมวลผล / ตารางเปรียบเทียบ ====================== */
+function pickYears(all,mode){
+  if(!all.length)return [];if(mode==='latest')return [all[all.length-1]];if(mode==='all')return all;
+  const n=+mode,last=all[all.length-1],set=new Set(all),res=[];
+  for(let y=last;y>=all[0];y-=n)if(set.has(y))res.push(y);
+  return res.reverse();
+}
+function rankOf(id,y,p){const arr=[];for(const q in S.data[id]){const v=(S.data[id][q]||{})[y];if(v!=null)arr.push([q,v])}
+  if(!arr.length||(S.data[id][p]||{})[y]==null)return null;arr.sort((a,b)=>b[1]-a[1]);return {r:arr.findIndex(a=>a[0]===p)+1,n:arr.length}}
+$('#btnRun').onclick=()=>{
+  const msg=$('#cmpMsg');msg.textContent='';
+  if(!S.sel.length){msg.textContent='กรุณาเลือกจังหวัดอย่างน้อย 1 จังหวัด';return}
+  if(!S.cmpInds.length){msg.textContent='กรุณาเลือกหัวข้อข้อมูลอย่างน้อย 1 หัวข้อ (หัวข้อสีจางคือยังไม่มีข้อมูล)';return}
+  const mode=$('#yearMode').value;
+  const out={inds:[...S.cmpInds],provs:[...S.sel],mode,rows:[],yearsBy:{}};
+  const allY=[...new Set(out.inds.flatMap(yearsOf))].sort((a,b)=>a-b);
+  out.years=pickYears(allY,mode);
+  for(const id of out.inds)for(const p of out.provs){
+    const vals={};out.years.forEach(y=>{const v=((S.data[id]||{})[p]||{})[y];vals[y]=v==null?null:v});
+    out.rows.push({id,p,vals});
+  }
+  S.out=out;renderOut();
+};
+S.cs={k:null,dir:-1};
+function tblRows(){
+  const o=S.out,rows=[];
+  for(const p of o.provs)for(const y of o.years){
+    const r={p,y,vals:{},rk:{}};
+    for(const id of o.inds){const v=((S.data[id]||{})[p]||{})[y];r.vals[id]=v==null?null:v;r.rk[id]=v==null?null:rankOf(id,y,p)}
+    if(o.inds.some(id=>r.vals[id]!=null))rows.push(r);
+  }
+  return rows;
+}
+function renderOutTable(){
+  const o=S.out;if(!o)return;
+  const multi=o.years.length>1,k=S.cs.k,d=S.cs.dir;
+  const rows=tblRows();
+  if(k)rows.sort((a,b)=>{
+    if(k==='p')return a.p.localeCompare(b.p,'th')*d;
+    if(k==='y')return (a.y-b.y)*d;
+    const x=a.vals[k],y=b.vals[k];if(x==null&&y==null)return 0;if(x==null)return 1;if(y==null)return -1;return (x-y)*d});
+  S.tbl=rows;
+  const ar=key=>k===key?(d===1?' ▲':' ▼'):' ⇅';
+  const head='<tr><th class="l" data-k="p">จังหวัด'+ar('p')+'</th>'+(multi?'<th class="l" data-k="y">ปี'+ar('y')+'</th>':'')+
+    o.inds.map(id=>{const c=cfgOf(id);return `<th data-k="${id}">${esc(c.label)}<br><small>${esc(c.unit)}${ar(id)}</small></th>`}).join('')+'</tr>';
+  const body=rows.map(r=>'<tr><td class="l"><b>'+r.p+'</b></td>'+(multi?`<td class="l">${yl(r.y)}</td>`:'')+
+    o.inds.map(id=>{const v=r.vals[id],rk=r.rk[id];return `<td>${fmt(v,cfgOf(id).dec)}${rk?`<br><small class="rk">อันดับ ${rk.r}/${rk.n}</small>`:''}</td>`}).join('')+'</tr>').join('');
+  $('#outTable').innerHTML=head+(body||'<tr><td class="l" colspan="9">ไม่มีข้อมูลในปีที่เลือก</td></tr>');
+}
+$('#outTable').onclick=e=>{const th=e.target.closest('th[data-k]');if(!th)return;
+  const key=th.dataset.k;if(S.cs.k===key)S.cs.dir*=-1;else{S.cs.k=key;S.cs.dir=key==='p'?1:-1}renderOutTable()};
+function renderOut(){
+  const o=S.out;if(!o)return;
+  const ys=o.years,ly=ys[ys.length-1],multi=ys.length>1;
+  renderOutTable();
+  const modeTxt={latest:'เฉพาะปีล่าสุด',3:'ทุก ๆ 3 ปี',5:'ทุก ๆ 5 ปี',10:'ทุก ๆ 10 ปี',all:'ทุกปีที่มีข้อมูล'}[o.mode];
+  o.caption=`ตารางเปรียบเทียบ ${o.provs.length} จังหวัด (${o.provs.join(', ')}) ตามหัวข้อ ${o.inds.map(i=>cfgOf(i).label).join(', ')} แสดง${modeTxt} ระหว่างปี ${yl(ys[0])}–${yl(ly)} · แถว = จังหวัด${multi?'และปี':''}, คอลัมน์ = หัวข้อข้อมูล · “อันดับ” ใต้ตัวเลข = ลำดับจากมากไปน้อยในบรรดาจังหวัดที่มีข้อมูลของหัวข้อและปีนั้น · ช่อง “–” คือไม่มีข้อมูล · คลิกหัวคอลัมน์เพื่อเรียงลำดับ (คลิกซ้ำเพื่อสลับมาก/น้อย)`;
+  $('#outCap').textContent=o.caption;
+  $('#outCard').hidden=false;$('#chartCard').hidden=false;
+  $('#chInd').innerHTML=o.inds.map(i=>`<option value="${i}">${esc(cfgOf(i).label)}</option>`).join('');
+  drawChart();
+  $('#outCard').scrollIntoView({behavior:'smooth',block:'start'});
+}
+$('#btnXlsx').onclick=()=>{
+  const o=S.out;if(!o||!S.tbl)return;const multi=o.years.length>1;
+  const hdr=['จังหวัด',...(multi?['ปี']:[]),...o.inds.flatMap(id=>[`${cfgOf(id).label} (${cfgOf(id).unit})`,'อันดับ'])];
+  const aoa=[[o.caption],[],hdr,...S.tbl.map(r=>[r.p,...(multi?[yl(r.y)]:[]),...o.inds.flatMap(id=>[r.vals[id],r.rk[id]?`${r.rk[id].r}/${r.rk[id].n}`:null])])];
+  const src=[['หัวข้อ','แหล่งข้อมูล'],...o.inds.map(i=>{const c=cfgOf(i);return [c.label,c.type==='ckan'?`${c.base||'https://data.go.th'} dataset=${c.dataset}`:c.type==='url'?c.url:c.type==='file'?'ไฟล์ที่นำเข้า (เช่น GPP สภาพัฒน์)':'คำนวณจากหัวข้ออื่น']})];
+  saveXlsx(aoa,'เปรียบเทียบ','thai-province-compare.xlsx',src);
+};
+$('#btnReset').onclick=()=>{
+  S.sel=[];S.cmpInds=S.cfg.filter(c=>hasData(c.id)).map(c=>c.id).slice(0,3);$('#yearMode').value='latest';$('#cmpMsg').textContent='';
+  S.out=null;S.cs={k:null,dir:-1};$('#outCard').hidden=true;$('#chartCard').hidden=true;if(S.chart){S.chart.destroy();S.chart=null}
+  inp.value='';box.hidden=true;renderChips();
+};
+
+/* ====================== กราฟ ====================== */
+const col=i=>`hsl(${(i*53+215)%360} 68% 48%)`;
+const colA=(i,a)=>`hsl(${(i*53+215)%360} 68% 48% / ${a})`;
+const bgPlugin={id:'bg',beforeDraw(c){const x=c.ctx;x.save();x.globalCompositeOperation='destination-over';x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.restore()}};
+function drawChart(){
+  const o=S.out;if(!o)return;if(S.chart){S.chart.destroy();S.chart=null}
+  const id=$('#chInd').value||o.inds[0],c=cfgOf(id),type=$('#chType').value;
+  const rows=o.rows.filter(r=>r.id===id),ys=o.years;
+  const ly=[...ys].reverse().find(y=>rows.some(r=>r.vals[y]!=null));
+  Chart.defaults.font.family="'Noto Sans Thai',sans-serif";
+  let cfg;
+  const title={display:true,text:`${c.label} (${c.unit})`,font:{size:16}};
+  const base={responsive:true,maintainAspectRatio:false,plugins:{title,legend:{position:'bottom'},tooltip:{callbacks:{label:t=>` ${t.dataset.label||t.label}: ${fmt(t.parsed.y!=null?t.parsed.y:(t.parsed.x!=null&&t.chart.options.indexAxis==='y'?t.parsed.x:t.parsed.r!=null?t.parsed.r:t.raw),c.dec)}`}}}};
+  if(['pie','doughnut','polar'].includes(type)){
+    const d=rows.filter(r=>r.vals[ly]!=null);title.text+=` · ปี ${yl(ly)}`;
+    cfg={type:type==='polar'?'polarArea':type,data:{labels:d.map(r=>r.p),datasets:[{data:d.map(r=>r.vals[ly]),backgroundColor:d.map((_,i)=>col(i))}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{title,legend:{position:'right'},tooltip:{callbacks:{label:t=>` ${t.label}: ${fmt(t.raw,c.dec)}`}}}}};
+  }else if(type==='hbar'){
+    const d=rows.filter(r=>r.vals[ly]!=null).sort((a,b)=>b.vals[ly]-a.vals[ly]);title.text+=` · ปี ${yl(ly)} (เรียงจากมากไปน้อย)`;
+    cfg={type:'bar',data:{labels:d.map(r=>r.p),datasets:[{label:yl(ly)+'',data:d.map(r=>r.vals[ly]),backgroundColor:d.map((_,i)=>col(i))}]},
+      options:{...base,indexAxis:'y',plugins:{...base.plugins,legend:{display:false}}}};
+  }else if(type==='radar'){
+    if(ys.length>=3)cfg={type:'radar',data:{labels:ys.map(yl),datasets:rows.map((r,i)=>({label:r.p,data:ys.map(y=>r.vals[y]),borderColor:col(i),backgroundColor:colA(i,.15),spanGaps:true}))},options:base};
+    else{const d=rows.filter(r=>r.vals[ly]!=null);title.text+=` · ปี ${yl(ly)}`;
+      cfg={type:'radar',data:{labels:d.map(r=>r.p),datasets:[{label:yl(ly)+'',data:d.map(r=>r.vals[ly]),borderColor:col(0),backgroundColor:colA(0,.25)}]},options:base}}
+  }else{
+    const isBar=type==='bar'||type==='stacked';
+    cfg={type:isBar?'bar':'line',data:{labels:ys.map(yl),datasets:rows.map((r,i)=>({label:r.p,data:ys.map(y=>r.vals[y]),borderColor:col(i),backgroundColor:isBar?col(i):colA(i,.25),fill:type==='area',tension:.25,spanGaps:true,pointRadius:ys.length>30?0:3}))},
+      options:{...base,scales:{x:{stacked:type==='stacked',title:{display:true,text:S.be?'พ.ศ.':'ค.ศ.'}},y:{stacked:type==='stacked',title:{display:true,text:c.unit},ticks:{callback:v=>fmt(v,c.dec)}}}}};
+  }
+  const lbl=$('#chLabels').checked,compact=$('#chCompact').checked;
+  const F=v=>v==null||isNaN(v)?'':(compact?Number(v).toLocaleString('th-TH',{notation:'compact',maximumFractionDigits:1}):fmt(v,c.dec));
+  const pos=['pie','doughnut','polar'].includes(type)?{anchor:'center',align:'center',color:'#fff',font:{size:12,weight:'bold'}}
+    :type==='stacked'?{anchor:'center',align:'center',color:'#fff',font:{size:11}}
+    :type==='bar'||type==='hbar'?{anchor:'end',align:'end',color:'#333',font:{size:11}}
+    :{anchor:'end',align:'top',color:'#333',font:{size:11}};
+  cfg.options=cfg.options||{};cfg.options.plugins=cfg.options.plugins||{};
+  cfg.options.plugins.datalabels={display:lbl?'auto':false,formatter:v=>F(v),clip:false,...pos};
+  cfg.options.layout={padding:{top:lbl?22:6,right:lbl&&type==='hbar'?70:12,bottom:6,left:6}};
+  const plg=typeof ChartDataLabels!=='undefined'?[ChartDataLabels,bgPlugin]:[bgPlugin];
+  S.chart=new Chart($('#chart'),{...cfg,plugins:plg});
+}
+$('#chInd').onchange=drawChart;$('#chType').onchange=drawChart;$('#chLabels').onchange=drawChart;$('#chCompact').onchange=drawChart;
+$('#btnPng').onclick=()=>{if(!S.chart)return;const a=document.createElement('a');a.download='thai-province-chart.png';a.href=S.chart.toBase64Image('image/png',1);a.click()};
+
+/* ====================== แท็บ / ปี / รีเฟรช ====================== */
+$$('.tab').forEach(t=>t.onclick=()=>{$$('.tab').forEach(x=>x.classList.toggle('on',x===t));$('#tab-rank').hidden=t.dataset.tab!=='rank';$('#tab-cmp').hidden=t.dataset.tab!=='cmp'});
+$('#yearEra').onchange=e=>{S.be=e.target.value==='be';lsSet('be',S.be);renderStatus();renderRankYears();renderRank();if(S.out){renderOut()}};
+$('#impFile').onchange=e=>{if(e.target.files[0])importNesdc(e.target.files[0]);e.target.value=''};
+$('#btnRefresh').onclick=()=>{S.cfg.forEach(c=>{if(c.type==='ckan'||c.type==='url')delete S.data[c.id]});loadAll()};
+
+/* ====================== ตั้งค่าแหล่งข้อมูล ====================== */
+const dlg=$('#dlg');
+function cfgCard(c){
+  const f=(k,l,ph,t)=>`<label>${l}<input type="${t||'text'}" data-k="${k}" value="${esc(c[k]==null?'':c[k])}" placeholder="${ph||''}"></label>`;
+  return `<details class="ic" data-id="${c.id}" ${c.type==='none'||S.st[c.id]&&S.st[c.id].s==='err'?'open':''}>
+   <summary>${esc(c.label)} <span class="stat ${(S.st[c.id]||{}).s==='ok'?'ok':(S.st[c.id]||{}).s==='err'?'err':''}">${esc((S.st[c.id]||{m:''}).m)}</span></summary>
+   <div class="g">
+    ${f('label','ชื่อหัวข้อ')}${f('unit','หน่วย')}${f('dec','ทศนิยม','0','number')}
+    <label>ประเภทแหล่งข้อมูล<select data-k="type">
+      <option value="ckan" ${c.type==='ckan'?'selected':''}>CKAN (data.go.th หรืออื่น ๆ)</option>
+      <option value="url" ${c.type==='url'?'selected':''}>URL ไฟล์ CSV / Excel / JSON</option>
+      <option value="file" ${c.type==='file'?'selected':''}>อัปโหลดไฟล์จากเครื่อง</option>
+      <option value="none" ${c.type==='none'?'selected':''}>ไม่ใช้ / คำนวณอัตโนมัติ</option></select></label>
+    ${f('dataset','รหัสชุดข้อมูล (slug)','เช่น stn_2567_02')}${f('base','CKAN base URL','https://data.go.th')}${f('resourceId','resource id (ถ้าต้องการระบุ)')}
+    ${f('url','URL ไฟล์ตรง ๆ','https://…/file.csv')}
+    ${f('provCol','คอลัมน์จังหวัด (เว้นว่าง=อัตโนมัติ)')}${f('yearCol','คอลัมน์ปี')}${f('valueCol','คอลัมน์ค่า')}
+    ${f('filterCol','กรองแถว: ชื่อคอลัมน์')}${f('filterVal','กรองแถว: ค่าที่เท่ากับ')}
+    <label>ถ้ามีหลายแถวต่อจังหวัด-ปี<select data-k="agg"><option value="first" ${c.agg!=='sum'&&c.agg!=='last'&&c.agg!=='max'?'selected':''}>ใช้แถวแรก</option><option value="sum" ${c.agg==='sum'?'selected':''}>รวมค่า</option><option value="last" ${c.agg==='last'?'selected':''}>ใช้แถวสุดท้าย</option><option value="max" ${c.agg==='max'?'selected':''}>ใช้ค่าสูงสุด</option></select></label>
+    ${f('mult','ตัวคูณปรับหน่วย','1','number')}${f('fixedYear','ปี (กรณีไฟล์ไม่มีคอลัมน์ปี ใส่ ค.ศ.)')}
+    <label>อัปโหลดไฟล์ (CSV/XLSX)<input type="file" data-up="${c.id}" accept=".csv,.xlsx,.xls,.json"></label>
+   </div>
+   <div class="row" style="margin-top:8px"><button data-test="${c.id}">ทดสอบ</button><button data-del="${c.id}">ลบหัวข้อนี้</button></div>
+   <pre class="diag" data-diag="${c.id}" hidden></pre>
+  </details>`;
+}
+function readCard(d){
+  const c={...cfgOf(d.dataset.id)};
+  d.querySelectorAll('[data-k]').forEach(i=>{c[i.dataset.k]=i.type==='number'&&i.value!==''?+i.value:i.value});
+  return c;
+}
+function openSettings(){$('#proxy').value=S.proxy||'';$('#cfgList').innerHTML=S.cfg.map(cfgCard).join('');dlg.showModal()}
+$('#btnSettings').onclick=openSettings;$('#dClose').onclick=()=>dlg.close();
+$('#addInd').onclick=()=>{collect();S.cfg.push({id:'x'+Date.now().toString(36),label:'หัวข้อใหม่',unit:'',dec:0,type:'ckan',dataset:''});$('#cfgList').innerHTML=S.cfg.map(cfgCard).join('');};
+function collect(){S.cfg=[...$('#cfgList').querySelectorAll('details.ic')].map(readCard);S.proxy=$('#proxy').value.trim()}
+$('#dSave').onclick=()=>{collect();lsSet('cfg',S.cfg);lsSet('proxy',S.proxy);dlg.close();S.cfg.forEach(c=>{if(c.type!=='file')delete S.data[c.id]});loadAll()};
+$('#dResetCfg').onclick=()=>{if(!confirm('คืนค่าแหล่งข้อมูลทั้งหมดเป็นค่าเริ่มต้น?'))return;S.cfg=JSON.parse(JSON.stringify(DEF_CFG));S.proxy='';lsSet('cfg',S.cfg);lsSet('proxy','');S.data={};dlg.close();loadAll()};
+$('#cfgList').addEventListener('click',async e=>{
+  const t=e.target.dataset;
+  if(t.del){collect();S.cfg=S.cfg.filter(c=>c.id!==t.del);$('#cfgList').innerHTML=S.cfg.map(cfgCard).join('')}
+  if(t.test){
+    const d=$(`details[data-id="${t.test}"]`),c=readCard(d),pre=$(`pre[data-diag="${t.test}"]`);pre.hidden=false;pre.textContent='กำลังทดสอบ…';
+    try{collectProxyOnly();const rows=c.type==='ckan'?await fetchCkan(c):c.type==='url'?await fetchUrl(c):(()=>{throw new Error('ประเภทนี้ไม่ต้องทดสอบออนไลน์')})();
+      const {info}=rowsToSeries(rows,c);
+      pre.textContent=`✓ อ่านได้ ${rows.length} แถว · รูปแบบ: ${info.layout}\nคอลัมน์จังหวัด: ${info.provCol}\nคอลัมน์ปี: ${info.yearCol||'(ตารางแบบกว้าง)'}\nคอลัมน์ค่า: ${info.valueCol||'(หลายปีเป็นคอลัมน์)'}\nพบ ${info.nProv} จังหวัด ช่วงปี ${yl(info.yMin)}–${yl(info.yMax)}\n\nคอลัมน์ทั้งหมด: ${info.headers.join(' | ')}\n\nตัวอย่าง 3 แถวแรก:\n${JSON.stringify(info.sample,null,1)}`;
+    }catch(err){pre.textContent='✗ '+err.message+(/Failed to fetch|NetworkError|Load failed/i.test(err.message)?'\n(อาจติด CORS: ตั้ง CORS proxy ด้านบน หรืออัปโหลดไฟล์แทน)':'')}
+  }
+});
+function collectProxyOnly(){S.proxy=$('#proxy').value.trim()}
+$('#cfgList').addEventListener('change',async e=>{
+  const id=e.target.dataset.up;if(!id||!e.target.files[0])return;
+  const d=$(`details[data-id="${id}"]`),c=readCard(d),pre=$(`pre[data-diag="${id}"]`);pre.hidden=false;
+  try{const f=e.target.files[0];const rows=bufToRows(await f.arrayBuffer(),f.name,c);const {series,info}=rowsToSeries(rows,c);
+    c.type='file';Object.assign(cfgOf(id),c);S.data[id]=series;lsSet('data.'+id,series);
+    d.querySelector('[data-k="type"]').value='file';
+    pre.textContent=`✓ อ่านไฟล์ ${f.name}: ${info.nProv} จังหวัด · ปี ${yl(info.yMin)}–${yl(info.yMax)} · คอลัมน์ค่า: ${info.valueCol||'(ตารางแบบกว้าง)'}\nกด “บันทึกและดึงข้อมูล” เพื่อใช้งาน`;
+  }catch(err){pre.textContent='✗ '+err.message}
+});
+$('#finderGo').onclick=async()=>{
+  const q=$('#finderQ').value.trim(),out=$('#finderRes');if(!q)return;out.textContent='กำลังค้นหา…';
+  try{collectProxyOnly();const j=await getJSON(`https://data.go.th/api/3/action/package_search?rows=10&q=${encodeURIComponent(q)}`);
+    const r=j.result.results||[];out.innerHTML=r.length?r.map(x=>`• <b>${esc(x.title||x.name)}</b> — slug: <code>${esc(x.name)}</code> <button data-copy="${esc(x.name)}" style="padding:1px 8px">คัดลอก slug</button>`).join('<br>'):'ไม่พบชุดข้อมูล';
+  }catch(e){out.textContent='ค้นหาไม่สำเร็จ: '+e.message}
+};
+$('#finderRes').onclick=e=>{const s=e.target.dataset.copy;if(s)navigator.clipboard&&navigator.clipboard.writeText(s)};
+
+/* ====================== เริ่มทำงาน ====================== */
+S.be=lsGet('be',true);$('#yearEra').value=S.be?'be':'ce';
+$('#nesdcUrl').value=lsGet('nesdcUrl',NESDC_PAGE);$('#autoNesdc').checked=lsGet('autoNesdc',false);
+$('#btnFetchNesdc').onclick=fetchNesdc;$('#autoNesdc').onchange=e=>lsSet('autoNesdc',e.target.checked);
+renderChips();renderStatus();renderRank();loadAll();
+if($('#autoNesdc').checked)fetchNesdc();
+</script>
+</body>
+</html>
